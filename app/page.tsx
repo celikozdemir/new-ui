@@ -6,10 +6,21 @@ import { AI } from "./actions";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { BlueText } from "@/components/blue-text";
 import { LoadingDots } from "@/components/loading-dots";
+import { ProjectsView } from "@/components/projects-view";
+import { ProjectDetailView } from "@/components/project-detail-view";
+
+interface Project {
+  id: string;
+  title: string;
+  client: string;
+  description: string;
+  image: string | null;
+  category: string;
+}
 
 export default function Home() {
   const [messages, setMessages] = useUIState<typeof AI>();
-  const { sendMessageWithContext } = useActions();
+  const { sendMessageWithContext, showProjectDetail } = useActions();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [currentTool, setCurrentTool] = useState<ReactNode | null>(null);
@@ -18,6 +29,8 @@ export default function Home() {
     Array<{ id: number; component: ReactNode }>
   >([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [projectsData, setProjectsData] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,6 +44,68 @@ export default function Home() {
     console.log("Main page: useUIState messages:", messages.length, messages);
   }, [messages]);
 
+  // Fetch projects data on component mount for LLM context
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        console.log("Fetching projects data for LLM context...");
+        const response = await fetch("/api/projects");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setProjectsData(data.projects || []);
+        console.log(
+          "Projects data loaded:",
+          data.projects?.length || 0,
+          "projects"
+        );
+      } catch (error) {
+        console.error("Error fetching projects for context:", error);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Handle project click
+  const handleProjectClick = async (projectId: string) => {
+    console.log("Main page: Project clicked:", projectId);
+    setIsProcessing(true);
+    setTextOverlays([]);
+
+    setCurrentTool(
+      <ProjectDetailView projectId={projectId} onBack={handleBackToProjects} />
+    );
+    setCurrentToolType("project_detail");
+
+    // Briefly show a text overlay
+    const toolOverlayId = Date.now();
+    setTextOverlays([
+      {
+        id: toolOverlayId,
+        component: <BlueText>Loading project details...</BlueText>,
+      },
+    ]);
+
+    setTimeout(() => {
+      setTextOverlays((prev) =>
+        prev.filter((overlay) => overlay.id !== toolOverlayId)
+      );
+    }, 2000); // Shorter duration
+
+    setIsProcessing(false);
+  };
+
+  // Handle back to projects
+  const handleBackToProjects = () => {
+    console.log("Main page: Going back to projects");
+    setCurrentTool(<ProjectsView onProjectClick={handleProjectClick} />);
+    setCurrentToolType("projects");
+  };
+
   // Clean AI-driven message handler
   const handleAIMessage = async (userMessage: string) => {
     console.log("Main page: handleAIMessage called with:", userMessage);
@@ -42,20 +117,58 @@ export default function Home() {
         currentToolType
       );
 
-      // Send message with current tool state to AI for decision making
+      console.log(
+        "Main page: Projects data being sent:",
+        projectsData.length,
+        "projects:",
+        projectsData
+      );
+
+      // Send message with current tool state and projects data to AI for decision making
       const response = await sendMessageWithContext(
         userMessage,
-        currentToolType
+        currentToolType,
+        projectsData
       );
       console.log("Main page: got AI response:", response);
 
       // Execute the AI's decision
       switch (response.type) {
+        case "project_detail":
+          console.log(
+            "✅ AI decided to show project detail:",
+            response.projectId
+          );
+          setTextOverlays([]);
+          setCurrentTool(
+            <ProjectDetailView
+              projectId={response.projectId}
+              onBack={handleBackToProjects}
+            />
+          );
+          setCurrentToolType("project_detail");
+          break;
+
         case "tool":
           console.log("✅ AI decided to show tool:", response.tool);
           // Clear text overlays and show new tool
           setTextOverlays([]);
-          setCurrentTool(response.component);
+
+          // Special handling for projects tool to include click handler
+          if (response.tool === "projects") {
+            console.log(
+              "Main page: Setting projects tool with relatedProjectIds:",
+              response.relatedProjectIds
+            );
+            setCurrentTool(
+              <ProjectsView
+                onProjectClick={handleProjectClick}
+                relatedProjectIds={response.relatedProjectIds}
+              />
+            );
+          } else {
+            setCurrentTool(response.component);
+          }
           setCurrentToolType(response.tool);
 
           // Show contextual text briefly
@@ -73,7 +186,7 @@ export default function Home() {
               setTextOverlays((prev) =>
                 prev.filter((overlay) => overlay.id !== toolOverlayId)
               );
-            }, 5000);
+            }, 500000);
           }, 300);
           break;
 
@@ -95,7 +208,7 @@ export default function Home() {
               setTextOverlays((prev) =>
                 prev.filter((overlay) => overlay.id !== textOverlayId)
               );
-            }, 6000);
+            }, 600000);
           }, 10);
           break;
 
@@ -104,7 +217,9 @@ export default function Home() {
       }
 
       // Update messages array
-      setMessages((prevMessages) => [...prevMessages, response.component]);
+      if (response.type !== "project_detail") {
+        setMessages((prevMessages) => [...prevMessages, response.component]);
+      }
     } catch (error) {
       console.error("Main page: error in sendMessage:", error);
 
@@ -161,10 +276,10 @@ export default function Home() {
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center space-y-4">
               <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-200">
-                Smart Home AI
+                CarvAI
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-400">
-                Ask me about cameras, smart home controls, energy usage, or
+                Ask me anything about Carvist and our work, or
                 contact information
               </p>
             </div>

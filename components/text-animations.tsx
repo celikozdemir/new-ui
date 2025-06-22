@@ -13,7 +13,7 @@ export const textAnimations = {
   fade: {
     appearing: "opacity-0",
     visible: "opacity-100",
-    duration: "duration-300",
+    duration: "duration-1000",
     easing: "ease-in-out",
   },
 

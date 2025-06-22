@@ -44,6 +44,48 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .project-description {
+    @apply text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed;
+  }
+
+  .project-description p {
+    @apply mb-4;
+  }
+
+  .project-description p:last-child {
+    @apply mb-0;
+  }
+
+  .project-description strong,
+  .project-description b {
+    @apply font-semibold text-zinc-800 dark:text-zinc-200;
+  }
+
+  .project-description em,
+  .project-description i {
+    @apply italic;
+  }
+
+  .project-description span {
+    @apply text-inherit;
+  }
 }
 
 @layer base {

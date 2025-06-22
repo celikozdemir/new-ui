@@ -21,12 +21,12 @@ export function BottomNavigation({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const suggestedActions = [
-    { title: "Show me my cameras", action: "show cameras" },
+    { title: "Show me your projects", action: "show projects" },
     {
-      title: "What is my water consumption?",
-      action: "show consumption charts",
+      title: "Who is Carvist?",
+      action: "show about",
     },
-    { title: "Analyze my home automation hub", action: "analyze hub data" },
+    { title: "How to reach you?", action: "show contact" },
     { title: "Help", action: "help me get started" },
   ];
 
@@ -160,6 +160,9 @@ export function BottomNavigation({
                     placeholder="Ask me anything..."
                     className="w-full h-10 px-4 pr-12 text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
                     disabled={isProcessing}
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                   <button
                     type="submit"
@@ -255,6 +258,9 @@ export function BottomNavigation({
                     placeholder="Ask me anything...."
                     className="w-full h-10 px-4 pr-12 text-sm bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
                     disabled={isProcessing}
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                   <button
                     type="submit"
